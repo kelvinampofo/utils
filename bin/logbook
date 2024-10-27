@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# logbook: A utility to create and manage logbook entries for a specific project.
+
+show_help() {
+    # colour codes
+    local RESET="\033[0m"
+    local BOLD="\033[1m"
+    local YELLOW="\033[33m"
+
+    echo -e "${BOLD}Usage:${RESET} logbook [OPTIONS]"
+    echo
+
+    # options section
+    echo -e "${BOLD}Options:${RESET}"
+    echo -e "  ${YELLOW}--help${RESET}             Print help manual and exit."
+    echo -e "  ${YELLOW}--project <dir>${RESET}    Specify project directory (default: current directory)"
+    echo -e "  ${YELLOW}--editor <editor>${RESET}  Specify the editor to use (default: vim)"
+    echo
+
+    # example section
+    echo -e "${BOLD}Example:${RESET}"
+    echo -e "  logbook --project /path/to/project" 
+    echo -e "  logbook --editor vim"
+}
+
+# default values
+LOGDIR=".logbook"
+LOGFILE="$(date +'%Y-%m-%d').md"
+PROJECT_DIR="$(pwd)"
+EDITOR_OVERRIDE=""
+
+# parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --help)
+            show_help
+            exit 0
+            ;;
+        --project)
+            shift
+            PROJECT_DIR="$1"
+            if [ -z "$PROJECT_DIR" ]; then
+                echo "Error: --project requires a directory argument."
+                exit 1
+            fi
+            ;;
+        --editor)
+            shift
+            EDITOR_OVERRIDE="$1"
+            if [ -z "$EDITOR_OVERRIDE" ]; then
+                echo "Error: --editor requires an editor argument."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# move to the specified project directory
+cd "$PROJECT_DIR" || _err "Error: Directory $PROJECT_DIR does not exist."
+
+# helper to display error messages
+_err() { echo -e "$0:" "$@" >&2 ; exit 1; }
+
+# determine the editor to use
+_default_editor() {
+  if [ -n "$EDITOR_OVERRIDE" ]; then
+    echo "$EDITOR_OVERRIDE"
+  elif [ -n "$EDITOR" ]; then
+    echo "$EDITOR"
+  else
+    command -v vim >/dev/null && EDITOR=vim
+    [ -z "$EDITOR" ] && command -v nano >/dev/null && EDITOR=nano
+    [ -z "$EDITOR" ] && _err "No suitable editor found. Set the EDITOR environment variable."
+    echo "$EDITOR"
+  fi
+}
+
+# set the editor to use
+EDITOR=$(_default_editor)
+
+# create the logbook directory if it doesn't exist
+if [ ! -d "$LOGDIR" ]; then
+  echo "Creating log directory: $LOGDIR"
+  mkdir -p "$LOGDIR"
+fi
+
+# set the full path for the log file
+LOGFILE_PATH="$LOGDIR/$LOGFILE"
+
+# create the log file if it doesn't exist
+if [ ! -f "$LOGFILE_PATH" ]; then
+  echo "# Log entry for $(date +'%Y-%m-%d')" > "$LOGFILE_PATH"
+  echo "Log file created: $LOGFILE_PATH"
+else
+  echo "Log file for today already exists: $LOGFILE_PATH"
+fi
+
+# open the log file with the editor
+exec $EDITOR "$LOGFILE_PATH"
