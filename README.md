@@ -1,75 +1,52 @@
 # utils
 
-A collection of command-line utilities designed to streamline everyday computer tasks.
+A collection of command-line utilities designed for everyday computer tasks.
 
 - [logbook](bin/logbook) — Manage a simple logbook per project
 
-## Installation
+### Installation
 
 Follow the steps below to set up the utilities on your system:
 
-### 1. Clone the repository
+#### 1. Clone the repository
 
 Clone this repository to your local machine in the ~/Developer directory (or your preferred location):
 
 ```bash
 mkdir -p ~/Developer
 cd ~/Developer
-git clone https://github.com/kelvinampofo/utils.git
+git clone git@github.com:kelvinampofo/utils.git
 ```
 
-### 2. Make the scripts executable
+#### 2. Make the scripts executable
 
-Ensure all scripts in the bin directory are executable:
+Make scripts executable:
 
 ```bash
 chmod +x ~/Developer/utils/bin/*
 ```
 
-### 3. Add the utils to your PATH
+#### 3. Add the utils to your PATH
 
-To access the utilities from anywhere, add the bin directory to your PATH:
-  
-1. Open your shell configuration file (~/.bashrc for Bash, ~/.zshrc for Zsh):
- 
-  ```bash
-  vim ~/.bashrc
-  ```
+Add this line to your shell config file (~/.bashrc or ~/.zshrc):
 
-  or for Zsh:
-
-  ```bash
-  vim ~/.zshrc
-  ```
-2. Add the following line to the file:
-  
-  ```bash
+```bash
 export PATH=$PATH:$HOME/Developer/utils/bin
-  ```
-3. Save and exit the editor.
-  
-4. Reload your shell configuration:
-  
-  ```bash
-source ~/.bashrc
-  ```
+```
 
-  or for Zsh:
+Then reload with:
 
-  ```bash
-source ~/.zshrc
-  ```
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
 
-4. Verify the installation
+#### 4. Verify installation
 
 Test the utilities to ensure they are correctly set up. For example, run:
 
 ```bash
 logbook
 ```
-
-If the installation is successful, this command will create a .logbook directory in your current working directory and open today’s log file with your default editor (e.g. vim).
-
 ## Usage
 
-See each program's manual with `--help`
+See each program's manual with the `--help` command.
