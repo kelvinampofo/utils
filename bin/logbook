@@ -96,7 +96,6 @@ LOGFILE_PATH="$LOGDIR/$LOGFILE"
 
 # create the log file if it doesn't exist
 if [ ! -f "$LOGFILE_PATH" ]; then
-  echo "# Log entry for $(date +'%Y-%m-%d')" > "$LOGFILE_PATH"
   echo "Log file created: $LOGFILE_PATH"
 else
   echo "Log file for today already exists: $LOGFILE_PATH"
