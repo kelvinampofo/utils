@@ -21,9 +21,9 @@ _err() {
 show_help() {
   echo -e "${BOLD}usage:${RESET} logbook [options]\n"
   echo -e "${BOLD}options:${RESET}"
-  echo -e "  ${YELLOW}--help${RESET}             print help manual and exit."
-  echo -e "  ${YELLOW}--project <dir>${RESET}    specify project directory (default: current directory)."
-  echo -e "  ${YELLOW}--editor <editor>${RESET}  specify the editor to use (default: vim).\n"
+  echo -e "  ${YELLOW}--help${RESET}             Print help manual and exit."
+  echo -e "  ${YELLOW}--project <dir>${RESET}    Specify project directory (default: current directory)."
+  echo -e "  ${YELLOW}--editor <editor>${RESET}  Specify the editor to use (default: vim).\n"
   echo -e "${BOLD}example:${RESET}"
   echo -e "  ${GREEN}logbook${RESET} --project /path/to/project"
   echo -e "  ${GREEN}logbook${RESET} --editor nano"
@@ -40,18 +40,18 @@ while [[ $# -gt 0 ]]; do
       shift
       PROJECT_DIR="$1"
       if [ -z "$PROJECT_DIR" ]; then
-        _err "error: --project requires a directory argument."
+        _err "Error: --project requires a directory argument."
       fi
       ;;
     --editor)
       shift
       EDITOR_OVERRIDE="$1"
       if [ -z "$EDITOR_OVERRIDE" ]; then
-        _err "error: --editor requires an editor argument."
+        _err "Error: --editor requires an editor argument."
       fi
       ;;
     *)
-      _err "unknown option: $1"
+      _err "Unknown option: $1"
       ;;
   esac
   shift
@@ -66,25 +66,25 @@ _default_editor() {
   else
     command -v vim >/dev/null && EDITOR=vim
     [ -z "$EDITOR" ] && command -v nano >/dev/null && EDITOR=nano
-    [ -z "$EDITOR" ] && _err "no suitable editor found. set the EDITOR environment variable."
+    [ -z "$EDITOR" ] && _err "No suitable editor found. Set the EDITOR environment variable."
     echo "$EDITOR"
   fi
 }
 
 # create or open a log file
 create_log_entry() {
-  cd "$PROJECT_DIR" || _err "error: directory $PROJECT_DIR does not exist."
+  cd "$PROJECT_DIR" || _err "Error: directory $PROJECT_DIR does not exist."
   
   if [ ! -d "$LOGDIR" ]; then
-    echo "creating log directory: $LOGDIR"
+    echo "Creating log directory: $LOGDIR"
     mkdir -p "$LOGDIR"
   fi
   
   LOGFILE_PATH="$LOGDIR/$LOGFILE"
   if [ ! -f "$LOGFILE_PATH" ]; then
-    echo "log file created: $LOGFILE_PATH"
+    echo "Log file created: $LOGFILE_PATH"
   else
-    echo "log file for today already exists: $LOGFILE_PATH"
+    echo "Log file for today already exists: $LOGFILE_PATH"
   fi
   
   EDITOR=$(_default_editor)
@@ -92,53 +92,54 @@ create_log_entry() {
 }
 
 set_project_directory() {
-  echo -n "enter the path to your project directory: "
+  echo -n "Enter the path to your project directory: "
   read -r selected_dir
   if [ -n "$selected_dir" ] && [ -d "$selected_dir" ]; then
     PROJECT_DIR="$selected_dir"
-    echo "project directory set to: $PROJECT_DIR"
+    echo "Project directory set to: $PROJECT_DIR"
   else
     _err "invalid or empty directory. keeping current directory: $PROJECT_DIR"
   fi
 }
 
 set_default_editor() {
-  echo "available editors: vim, nano"
-  echo -n "enter the editor you want to use (default: vim): "
+  echo "Available editors: vim, nano"
+  echo -n "Enter the editor you want to use (default: vim): "
   read -r selected_editor
   if [ -n "$selected_editor" ]; then
     EDITOR_OVERRIDE="$selected_editor"
-    echo "default editor set to: $EDITOR_OVERRIDE"
+    echo "Default editor set to: $EDITOR_OVERRIDE"
   else
-    echo "no editor selected. keeping current editor: vim"
+    echo "No editor selected. keeping current editor: vim"
   fi
 }
 
 view_logs() {
-  cd "$PROJECT_DIR/$LOGDIR" || _err "no log directory found in $PROJECT_DIR."
+  cd "$PROJECT_DIR/$LOGDIR" || _err "No log directory found in $PROJECT_DIR."
   
   echo -e "${BOLD}log files:${RESET}"
   ls -1
   
   echo
-  echo -n "enter the log file name to view or press enter to go back: "
+  echo -n "Enter the log file name to view or press enter to go back: "
   read -r log_file
   if [ -f "$log_file" ]; then
     EDITOR=$(_default_editor)
     exec $EDITOR "$log_file"
   else
-    echo "no file selected or file does not exist. returning to menu."
+    echo "No file selected or file does not exist. Returning to menu."
     sleep 1
   fi
 }
 
 main_menu() {
   local options=(
-    "create new log entry" 
-    "set project directory" 
-    "set default editor" 
-    "view existing logs"
-    "exit"
+    "Create new log entry" 
+    "Set project directory" 
+    "Set default editor" 
+    "View existing logs"
+    "Help"
+    "Exit"
   )
 
   local num_options=${#options[@]}
@@ -151,7 +152,7 @@ main_menu() {
     # display options with the current selection highlighted
     for i in "${!options[@]}"; do
       if [ "$i" -eq "$current_selection" ]; then
-        echo -e "  ${GREEN}* ${options[$i]}${RESET}"
+        echo -e "  ${GREEN}> ${options[$i]}${RESET}"
       else
         echo "    ${options[$i]}"
       fi
@@ -182,7 +183,8 @@ main_menu() {
           1) set_project_directory ;;
           2) set_default_editor ;;
           3) view_logs ;;
-          4) exit 0 ;;
+          4) show_help; read -n1 -rsp "Press any key to return to the menu..." ;;
+          5) exit 0 ;;
         esac
         ;;
       *) ;; # ignore other inputs
