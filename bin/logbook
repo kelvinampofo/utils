@@ -22,6 +22,13 @@ _err() {
   exit 1
 }
 
+# helper to pause and prompt user to press any key
+pause_prompt() {
+  local message=${1:-"Press any key to return to the menu..."}
+  read -n1 -rsp "$message"
+  echo
+}
+
 # load configuration from .logbookrc
 load_config() {
   if [ -f "$CONFIG_FILE" ]; then
@@ -96,7 +103,7 @@ view_logs() {
 
   if [ ! -d "$LOGDIR_PATH" ]; then
     echo "No log directory found in $PROJECT_DIR."
-    read -n1 -rsp "Press any key to return to the menu..."
+    pause_prompt
     return
   fi
 
@@ -104,7 +111,7 @@ view_logs() {
 
   if [ ${#LOG_FILES[@]} -eq 1 ] && [[ "${LOG_FILES[0]}" == "$LOGDIR_PATH/*.md" ]]; then
     echo "No log files found in $LOGDIR_PATH."
-    read -n1 -rsp "Press any key to return to the menu..."
+    pause_prompt
     return
   fi
 
@@ -114,7 +121,7 @@ view_logs() {
   done
 
   # pause to let the user view logs
-  read -n1 -rsp "Press any key to return to the menu..."
+  pause_prompt
 }
 
 # show help menu
@@ -180,7 +187,7 @@ main_menu() {
           1) set_project_directory ;;
           2) set_default_editor ;;
           3) view_logs ;;
-          4) show_help; read -n1 -rsp "Press any key to return to the menu..." ;;
+          4) show_help; pause_prompt ;;
           5) exit 0 ;;
         esac
         ;;
@@ -188,7 +195,6 @@ main_menu() {
     esac
   done
 }
-
 
 load_config
 main_menu
