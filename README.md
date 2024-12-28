@@ -28,7 +28,9 @@ Some notes:
 
 ### logbook
 
-The logbook can be configured using an optional `.logbookrc` file, which is recommended for specifying defaults such as the project directory and editor. If this file is not present, the utilities will revert to system defaults or command-line arguments. Copy the example and customise it:
+`logbook` can be configured using an optional `.logbookrc` file, which is recommended for specifying defaults such as the project directory and editor. If this file is not present, the program will revert to sane defaults or command-line arguments respectively.
+
+Copy the example and customise it:
 
 ```
 cp .logbookrc.example .logbookrc
