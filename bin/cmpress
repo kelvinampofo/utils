@@ -14,12 +14,27 @@ show_help() {
   echo
   echo -e "${CYAN}Commands:${NC}"
   echo "  compress-video   Compress a video while maintaining quality"
+  echo "                   Arguments: <input> <output> [quality]"
+  echo "                   - input: Path to the input video file."
+  echo "                   - output: Path to the compressed video file."
+  echo "                   - quality (optional): CRF value for quality control. Default is 23. Lower values mean better quality, higher values mean higher compression."
+  echo
   echo "  resize-image     Resize and compress an image"
+  echo "                   Arguments: <input> <output> <width>"
+  echo "                   - input: Path to the input image file."
+  echo "                   - output: Path to the resized and compressed image."
+  echo "                   - width: Desired width for the resized image. The height is automatically scaled to maintain aspect ratio."
+  echo
   echo "  gif-to-mp4       Convert an animated GIF to an MP4"
+  echo "                   Arguments: <input> <output>"
+  echo "                   - input: Path to the input GIF file."
+  echo "                   - output: Path to the output MP4 file."
+  echo
   echo "  help             Show this help message"
   echo
   echo -e "${CYAN}Examples:${NC}"
   echo "  cmpress compress-video input.mp4 output.mp4"
+  echo "  cmpress compress-video input.mp4 output.mp4 18"
   echo "  cmpress resize-image input.png output.jpg 1280"
   echo "  cmpress gif-to-mp4 input.gif output.mp4"
 }
