@@ -153,18 +153,29 @@ main_menu() {
     clear
     echo -e "logbook main menu:\n"
 
-    # display options with the current selection highlighted
+    # display options with numbered shortcuts and the current selection highlighted
     for i in "${!options[@]}"; do
       if [ "$i" -eq "$current_selection" ]; then
-        echo -e "  ${GREEN}> ${options[$i]}${RESET}"
+        echo -e "  ${GREEN}$((i + 1)) ${options[$i]}${RESET}"
       else
-        echo "    ${options[$i]}"
+       echo -e "  $((i + 1)) ${options[$i]}"
       fi
     done
 
     # read user input
+    echo -e "\nEnter the number of your choice or use arrow keys to navigate:"
     read -rsn1 input # read single character silently
-    if [[ "$input" == $'\033' ]]; then
+    if [[ "$input" =~ ^[1-9]$ ]]; then
+      local selection=$((input - 1))
+      if [ "$selection" -ge 0 ] && [ "$selection" -lt "$num_options" ]; then
+        current_selection=$selection
+        input="" # reset input to trigger 'enter' behavior
+      else
+        echo -e "${YELLOW}Invalid choice.${RESET} Press any key to continue..."
+        read -n1 -r
+        continue
+      fi
+    elif [[ "$input" == $'\033' ]]; then
       read -rsn2 input # read the next two characters for arrow keys
     fi
 
@@ -181,7 +192,7 @@ main_menu() {
           current_selection=0
         fi
         ;;
-      "") # enter key
+      "") # enter key or resolved numeric input
         case "$current_selection" in
           0) create_log_entry ;;
           1) set_project_directory ;;
@@ -191,7 +202,10 @@ main_menu() {
           5) exit 0 ;;
         esac
         ;;
-      *) ;; # ignore other inputs
+      *) # ignore other inputs
+        echo -e "${YELLOW}Invalid choice.${RESET} Press any key to continue..."
+        read -n1 -r
+        ;;
     esac
   done
 }
