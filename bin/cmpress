@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# A lightweight CLI for FFmpeg utilities
+
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m' # no colour
+
+show_help() {
+  echo -e "${CYAN}Usage:${NC}"
+  echo "  cmpress [command] [options]"
+  echo
+  echo -e "${CYAN}Commands:${NC}"
+  echo "  compress-video   Compress a video while maintaining quality"
+  echo "  resize-image     Resize and compress an image"
+  echo "  gif-to-mp4       Convert an animated GIF to an MP4"
+  echo "  help             Show this help message"
+  echo
+  echo -e "${CYAN}Examples:${NC}"
+  echo "  cmpress compress-video input.mp4 output.mp4"
+  echo "  cmpress resize-image input.png output.jpg 1280"
+  echo "  cmpress gif-to-mp4 input.gif output.mp4"
+}
+
+compress_video() {
+  input=$1
+  output=$2
+  quality=${3:-23} # default CRF value is 23
+
+  if [[ -z "$input" || -z "$output" ]]; then
+    echo -e "${RED}Error: Missing input or output file.${NC}"
+    echo "Usage: compress-utils compress-video <input> <output> [quality]"
+    exit 1
+  fi
+
+  echo -e "${CYAN}Compressing video...${NC}"
+  ffmpeg -i "$input" -vcodec libx264 -crf "$quality" "$output"
+  echo -e "${GREEN}Video compressed successfully! Output: $output${NC}"
+}
+
+resize_image() {
+  input=$1
+  output=$2
+  width=$3
+
+  if [[ -z "$input" || -z "$output" || -z "$width" ]]; then
+    echo -e "${RED}Error: Missing input, output, or width.${NC}"
+    echo "Usage: compress-utils resize-image <input> <output> <width>"
+    exit 1
+  fi
+
+  echo -e "${CYAN}Resizing and compressing image...${NC}"
+  ffmpeg -i "$input" -vf scale="$width":-1 "$output"
+  echo -e "${GREEN}Image resized successfully! Output: $output${NC}"
+}
+
+gif_to_mp4() {
+  input=$1
+  output=$2
+
+  if [[ -z "$input" || -z "$output" ]]; then
+    echo -e "${RED}Error: Missing input or output file.${NC}"
+    echo "Usage: compress-utils gif-to-mp4 <input> <output>"
+    exit 1
+  fi
+
+  echo -e "${CYAN}Converting GIF to MP4...${NC}"
+  ffmpeg -i "$input" -movflags faststart -pix_fmt yuv420p "$output"
+  echo -e "${GREEN}GIF converted to MP4 successfully! Output: $output${NC}"
+}
+
+# parse Commands
+command=$1
+shift
+
+case "$command" in
+  compress-video)
+    compress_video "$@"
+    ;;
+  resize-image)
+    resize_image "$@"
+    ;;
+  gif-to-mp4)
+    gif_to_mp4 "$@"
+    ;;
+  help | --help | -h)
+    show_help
+    ;;
+  *)
+    echo -e "${RED}Unknown command: $command${NC}"
+    show_help
+    ;;
+esac
