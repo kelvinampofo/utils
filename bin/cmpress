@@ -46,7 +46,7 @@ compress_video() {
 
   if [[ -z "$input" || -z "$output" ]]; then
     echo -e "${RED}Error: Missing input or output file.${NC}"
-    echo "Usage: compress-utils compress-video <input> <output> [quality]"
+    echo "Usage: cmpress compress-video <input> <output> [quality]"
     exit 1
   fi
 
@@ -62,7 +62,7 @@ resize_image() {
 
   if [[ -z "$input" || -z "$output" || -z "$width" ]]; then
     echo -e "${RED}Error: Missing input, output, or width.${NC}"
-    echo "Usage: compress-utils resize-image <input> <output> <width>"
+    echo "Usage: cmpress resize-image <input> <output> <width>"
     exit 1
   fi
 
@@ -77,7 +77,7 @@ gif_to_mp4() {
 
   if [[ -z "$input" || -z "$output" ]]; then
     echo -e "${RED}Error: Missing input or output file.${NC}"
-    echo "Usage: compress-utils gif-to-mp4 <input> <output>"
+    echo "Usage: cmpress gif-to-mp4 <input> <output>"
     exit 1
   fi
 
