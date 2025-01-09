@@ -4,6 +4,8 @@ A lightweight collection of command-line utilities designed to simplify everyday
 
 [logbook](bin/logbook) — Manage a project-specific logbook in markdown.
 
+[cmpress](bin/cmpress) — Simplify video and image compression tasks using FFmpeg.
+
 **Installation**
 
 The idea is to add these utils to your `PATH`, similar to this:
@@ -45,3 +47,7 @@ You can configure the following options:
 
 - `EDITOR`:
   Default text editor to use for editing log files. The utility will fall back to vim or nano if this option is not set and the specified editor is unavailable.
+
+### cmpress
+
+Make sure FFmpeg is installed on your system to use `cmpress`. Follow [FFmpeg installation instructions](https://ffmpeg.org/download.html) if needed.
