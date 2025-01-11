@@ -50,9 +50,54 @@ compress_video() {
     exit 1
   fi
 
+  if ! command -v ffprobe &>/dev/null; then
+    echo -e "${RED}Error: ffprobe is not installed. Please install it to use this util.${NC}"
+    exit 1
+  fi
+
+  # compress the video
   echo -e "${CYAN}Compressing video...${NC}"
-  ffmpeg -i "$input" -vcodec libx264 -crf "$quality" "$output"
-  echo -e "${GREEN}Video compressed successfully! Output: $output${NC}"
+  ffmpeg -i "$input" -vcodec libx264 -crf "$quality" "$output" >/dev/null 2>&1
+
+  if [[ $? -eq 0 ]]; then
+    echo -e "${GREEN}Video compressed successfully!${NC}"
+    echo
+
+    compression_start=$(date +%s.%N)
+
+    # get file size, resolution, and duration of the input video
+    input_size=$(stat --printf="%s" "$input" 2>/dev/null || stat -f%z "$input") # size in bytes
+    input_size_mb=$(echo "scale=2; $input_size / 1024 / 1024" | bc) # convert to MB
+    input_width=$(ffprobe -i "$input" -v quiet -select_streams v:0 -show_entries stream=width -of csv=p=0)
+    input_height=$(ffprobe -i "$input" -v quiet -select_streams v:0 -show_entries stream=height -of csv=p=0)
+    input_resolution="${input_width}x${input_height}"
+    input_format=$(basename "$input" | awk -F. '{print $NF}' | tr '[:lower:]' '[:upper:]')
+
+    # get file size, resolution, and duration of the output video
+    output_size=$(stat --printf="%s" "$output" 2>/dev/null || stat -f%z "$output") # size in bytes
+    output_size_mb=$(echo "scale=2; $output_size / 1024 / 1024" | bc) # convert to MB
+    output_width=$(ffprobe -i "$output" -v quiet -select_streams v:0 -show_entries stream=width -of csv=p=0)
+    output_height=$(ffprobe -i "$output" -v quiet -select_streams v:0 -show_entries stream=height -of csv=p=0)
+    output_resolution="${output_width}x${output_height}"
+
+    compression_end=$(date +%s.%N)
+    compression_time=$(printf "%.1f" $(echo "$compression_end - $compression_start" | bc))
+
+    # display video information
+    echo -e "${CYAN}Input video:${NC}"
+    echo -e "  Size: ${GREEN}${input_size_mb} MB${NC}"
+    echo -e "  Resolution: ${GREEN}${input_resolution}${NC}"
+    echo -e "  Video format: ${GREEN}${input_format}${NC}"
+    echo 
+    echo -e "${CYAN}Output video:${NC}"
+    echo -e "  Size reduced: ${GREEN}${output_size_mb} MB${NC} (reduced by $(echo "scale=2; 100 * ($input_size - $output_size) / $input_size" | bc)%)"
+    echo -e "  Time taken: ${GREEN}${compression_time}s${NC}"
+    echo -e "  Output folder: ${CYAN}$output${NC}"
+
+  else
+    echo -e "${RED}Error: Video compression failed.${NC}"
+    exit 1
+  fi
 }
 
 resize_image() {
@@ -86,7 +131,7 @@ gif_to_mp4() {
   echo -e "${GREEN}GIF converted to MP4 successfully! Output: $output${NC}"
 }
 
-# parse Commands
+# parse commands
 command=$1
 shift
 
