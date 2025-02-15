@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# new-sandbox: A utility to quickly create a new Vite app for experimentation.
+
+RESET="\033[0m"
+BOLD="\033[1m"
+YELLOW="\033[33m"
+GREEN="\033[32m"
+
+# default sandbox directory
+SANDBOX_DIR=~/Developer/workspaces/sandboxes
+
+show_help() {
+  echo -e "${BOLD}usage:${RESET} new-sandbox [options] [app-name]\n"
+  echo -e "${BOLD}options:${RESET}"
+  echo -e "  ${YELLOW}--help${RESET}             show this help message and exit."
+  echo -e "  ${YELLOW}--dir <path>${RESET}       specify a custom sandbox directory (default: ~/Developer/workspaces/sandboxes).\n"
+  echo -e "${BOLD}example:${RESET}"
+  echo -e "  ${GREEN}new-sandbox my-app${RESET}                    # create a Vite app named 'my-app'"
+  echo -e "  ${GREEN}new-sandbox${RESET}                           # create a Vite app named using today's date"
+  echo -e "  ${GREEN}new-sandbox --dir ~/projects sandapp${RESET}  # create in a custom directory\n"
+}
+
+new-sandbox() {
+  local custom_dir=""
+
+# parse commands
+  while [[ "$1" =~ ^-- ]]; do
+    case "$1" in
+      --help)
+        show_help
+        return 0
+        ;;
+      --dir)
+        shift
+        custom_dir="$1"
+        ;;
+      *)
+        echo -e "${YELLOW}Unknown option:$RESET $1"
+        show_help
+        return 1
+        ;;
+    esac
+    shift
+  done
+
+  # if a directory is provided, use it instead of the default
+  if [ -n "$custom_dir" ]; then
+    SANDBOX_DIR="$custom_dir"
+  fi
+
+  # if no argument is provided, use today's date as the app name
+  if [ -z "$1" ]; then
+    echo -n "Enter the app name (or press Enter to use timestamp): "
+    read appname
+    appname=${appname:-$(date +%Y-%m-%d)}
+  else
+    appname="$1"
+  fi
+
+  # ensure the sandboxes directory exists
+  mkdir -p "$SANDBOX_DIR"
+
+  cd "$SANDBOX_DIR" || exit
+
+  echo "creating Vite project: $appname..."
+  npm create vite@latest "$appname"
+
+  # change into the new app directory
+  cd "$appname" || exit
+  
+  npm i
+
+  code .
+}
+
+new-sandbox "$@"
