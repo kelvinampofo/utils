@@ -4,6 +4,7 @@ A lightweight collection of command-line utilities designed to simplify everyday
 
 - [logbook](bin/logbook) — Manage a project-specific logbook in markdown.
 - [cmpress](bin/cmpress) — Simplify video and image compression tasks using FFmpeg.
+- [new-sandbox](bin/new-sandbox) — Quickly create a new Vite app for experimentation.
 
 **Installation**
 
