@@ -1,4 +1,8 @@
 /.DS_Store
 /_local
 /.cache
-/.logbookrc
+
+# ignore binaries
+/bin/*
+!/bin/cmpress
+!/bin/sandbox
