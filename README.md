@@ -2,9 +2,9 @@
 
 A lightweight collection of command-line utilities designed to simplify everyday computer tasks.
 
-- [logbook](bin/logbook) — Manage a project-specific logbook in markdown.
-- [cmpress](bin/cmpress) — Simplify video and image compression tasks using FFmpeg.
-- [new-sandbox](bin/new-sandbox) — Quickly create a new Vite app for experimentation.
+- [logbook](bin/logbook) — manage a project-specific logbook in markdown.
+- [cmpress](bin/cmpress) — simplify video and image compression tasks using FFmpeg.
+- [new-sandbox](bin/new-sandbox) — quickly create a new Vite app for rapid prototyping.
 
 **Installation**
 
@@ -18,6 +18,21 @@ echo 'export PATH=$PATH:$HOME/Developer/utils/bin' >> ~/.zshrc
 source ~/.zshrc
 ```
 
+**Building Go-based utilities**
+
+Some tools, like `logbook`, are written in Go and must be built before use. To build them:
+
+```
+cd ~/Developer/utils
+go build -o bin/logbook ./cmd/logbook
+```
+
+Make sure the resulting `bin/logbook` is in your `$PATH` as shown above. You can now run it using:
+
+```
+logbook --help
+```
+
 ## Usage
 
 For a manual on each util, run:
@@ -28,26 +43,6 @@ For a manual on each util, run:
 
 Some notes:
 
-### logbook
-
-`logbook` can be configured using an optional `.logbookrc` file, which is recommended for specifying defaults such as the project directory and editor. If this file is not present, the program will revert to sane defaults or command-line arguments respectively.
-
-Copy the example and customise it:
-
-```
-cp .logbookrc.example .logbookrc
-
-# replace the `cp` command with `copy` in command prompt or `Copy-Item` in powershell, respectively
-```
-
-You can configure the following options:
-
-- `PROJECT_DIR`:
-  Path to the default project directory where the logbook will store and manage logs. If not specified, the current directory is used by default.
-
-- `EDITOR`:
-  Default text editor to use for editing log files. The utility will fall back to vim or nano if this option is not set and the specified editor is unavailable.
-
 ### cmpress
 
-Please note to ensure `FFmpeg` is installed on your system to use `cmpress`. Follow [FFmpeg installation instructions](https://ffmpeg.org/download.html) if needed.
+Ensure `FFmpeg` is installed on your system to use `cmpress`. Follow [FFmpeg installation instructions](https://ffmpeg.org/download.html) if needed.
