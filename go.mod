@@ -1,6 +1,6 @@
-module github.com/kelvinampofo/logbook
+module github.com/kelvinampofo/utils
 
-go 1.24.1
+go 1.24.2
 
 require github.com/spf13/cobra v1.9.1
 
