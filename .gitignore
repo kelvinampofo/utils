@@ -4,5 +4,3 @@
 
 # ignore binaries
 /bin/*
-!/bin/cmpress
-!/bin/sandbox
