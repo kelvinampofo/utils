@@ -4,7 +4,7 @@ Minimal CLI utilities for everyday personal computer tasks.
 
 [logbook](cmd/logbook/main.go) — manage a project-specific logbook in markdown.
 <br>
-[new-sketch](cmd/new-sketch/main.go) — scaffold a new Vite app for rapid UI prototyping.
+[new-sketch](cmd/newSketch/main.go) — scaffold a new Vite app for rapid UI prototyping.
 
 **Installation**
 
