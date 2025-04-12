@@ -1,10 +1,10 @@
 # utils
 
-A lightweight collection of command-line utilities designed to simplify everyday computer tasks.
+Minimal CLI utilities for everyday personal computer tasks.
 
-- [logbook](bin/logbook) — manage a project-specific logbook in markdown.
-- [cmpress](bin/cmpress) — simplify video and image compression tasks using FFmpeg.
-- [new-sandbox](bin/new-sandbox) — quickly create a new Vite app for rapid prototyping.
+[logbook](cmd/logbook/main.go) — manage a project-specific logbook in markdown.
+<br>
+[new-sketch](cmd/new-sketch/main.go) — scaffold a new Vite app for rapid UI prototyping.
 
 **Installation**
 
@@ -13,24 +13,25 @@ The idea is to add these utils to your `PATH`, similar to this:
 ```
 cd ~/Developer
 git clone git@github.com:kelvinampofo/utils.git
+
 # edit your shell configuration (e.g., ~/.zshrc or ~/.bashrc)
 echo 'export PATH=$PATH:$HOME/Developer/utils/bin' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-**Building Go-based utilities**
+**Go-based utilities**
 
-Some tools, like `logbook`, are written in Go and must be built before use. To build them:
+The CLI utils are written in Go and must be built before use. If you haven't already, please install [Go](https://go.dev) on your machine. To build them:
 
 ```
 cd ~/Developer/utils
-go build -o bin/logbook ./cmd/logbook
+go build -o bin/<util-name> ./cmd/<util-name>
 ```
 
-Make sure the resulting `bin/logbook` is in your `$PATH` as shown above. You can now run it using:
+Make sure the resulting `bin/<util-name>` is in your `$PATH` as shown above. You can now run it using:
 
 ```
-logbook --help
+<util-name>
 ```
 
 ## Usage
@@ -40,9 +41,3 @@ For a manual on each util, run:
 ```
 <util-name> --help
 ```
-
-Some notes:
-
-### cmpress
-
-Ensure `FFmpeg` is installed on your system to use `cmpress`. Follow [FFmpeg installation instructions](https://ffmpeg.org/download.html) if needed.
