@@ -3,4 +3,4 @@
 /.cache
 
 # ignore binaries
-/bin/*
+/bin
