@@ -117,12 +117,12 @@ var rootCmd = &cobra.Command{
 func init() {
 	// register subcommands on the root
 	rootCmd.AddCommand(
-		addCmd, 
-		editCmd, 
-		grepCmd, 
-		logdirCmd, 
-		logfileCmd, 
-		lsCmd, 
+		addCmd,
+		editCmd,
+		grepCmd,
+		logdirCmd,
+		logfileCmd,
+		lsCmd,
 		readCmd,
 	)
 }
@@ -130,7 +130,7 @@ func init() {
 func main() {
 	// disable completion option
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	
+
 	// if "logbook" is run with no subcommand and no flags,
 	// Cobra will call rootCmd.Run and then exit.
 	if err := rootCmd.Execute(); err != nil {

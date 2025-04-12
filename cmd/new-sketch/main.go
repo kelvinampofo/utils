@@ -11,14 +11,14 @@ import (
 )
 
 var (
-	customDir  string 
-	useVanilla  bool  
+	customDir  string
+	useVanilla bool
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "new-sketch [app-name]",
 	Short: "Scaffold a new Vite app for rapid UI prototyping",
-	Long:  `new-sketch creates a new Vite app in your sketches directory for rapid UI prototyping.
+	Long: `new-sketch creates a new Vite app in your sketches directory for rapid UI prototyping.
 
 Examples:
   new-sketch my-app                 # uses React template by default
@@ -34,7 +34,7 @@ For feedback or issues, visit: https://github.com/kelvinampofo/utils`,
 func runNewSketch(cmd *cobra.Command, args []string) {
 	// default sketch directory
 	sandboxDir := filepath.Join(os.Getenv("HOME"), "Developer", "workspaces", "sketches")
-	
+
 	if customDir != "" {
 		sandboxDir = customDir
 	}
