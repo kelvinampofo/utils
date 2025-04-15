@@ -25,7 +25,7 @@ var config = Config{
 	EntryPermission: 0644,
 }
 
-// fatal prints an error message and exits the program.
+// fatal prints an error message to stderr and exits with code 1.
 func fatal(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
@@ -60,16 +60,19 @@ func newRootCmd() *cobra.Command {
 }
 
 var editCmd = &cobra.Command{
-	Use:   "edit [date]",
-	Short: "Open today's log entry or a specified date file",
+	Use:     "edit [date]",
+	Short:   "Open today's log entry or a specified date file",
+	Example: "  logbook edit\n  logbook edit 2025-04-15",
 	Run: func(cmd *cobra.Command, args []string) {
 		editEntry(resolveLogFile(firstArg(args)))
+		fmt.Fprintln(os.Stdout, "Opened log entry. You can now edit your notes.")
 	},
 }
 
 var addCmd = &cobra.Command{
-	Use:   "add [text]",
-	Short: "Append a line of text to today's log",
+	Use:     "add [text]",
+	Short:   "Append a line of text to today's log",
+	Example: "  logbook add 'Today was a good day'",
 	Run: func(cmd *cobra.Command, args []string) {
 		file := resolveLogFile("")
 		if len(args) == 0 {
@@ -81,8 +84,9 @@ var addCmd = &cobra.Command{
 }
 
 var readCmd = &cobra.Command{
-	Use:   "read [date]",
-	Short: "Read today's or a specified date log in a pager",
+	Use:     "read [date]",
+	Short:   "Read today's or a specified date log in a pager",
+	Example: "  logbook read\n  logbook read 2025-04-15",
 	Run: func(cmd *cobra.Command, args []string) {
 		readEntry(resolveLogFile(firstArg(args)))
 	},
@@ -142,6 +146,9 @@ func resolveLogDir() string {
 
 // resolveLogFile returns the full path to the log file for the given date.
 func resolveLogFile(date string) string {
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
 	return filepath.Join(resolveLogDir(), date+config.FileExtension)
 }
 
@@ -153,16 +160,17 @@ func editEntry(file string) {
 
 // appendToEntry appends the provided text to the specified log file.
 func appendToEntry(file string, lines []string) {
+	ensureDir(filepath.Dir(file), config.FilePermission)
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, config.EntryPermission)
 	if err != nil {
-		fatal("failed to open file: %v", err)
+		fatal("Failed to open file: %v", err)
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(strings.Join(lines, " ") + "\n"); err != nil {
-		fatal("failed to write to file: %v", err)
+		fatal("Failed to write to file: %v", err)
 	}
-	fmt.Fprintf(os.Stdout, "added entry to %q\n", filepath.Base(file))
+	fmt.Fprintf(os.Stdout, "Added entry to \"%s\"\n", filepath.Base(file))
 }
 
 // readEntry displays the log file using the user's pager, defaulting to "less" if not specified.
@@ -178,7 +186,7 @@ func readEntry(file string) {
 func listEntries(dir string) {
 	files, err := filepath.Glob(filepath.Join(dir, "*"+config.FileExtension))
 	if err != nil {
-		fatal("error listing files: %v", err)
+		fatal("Error listing files: %v", err)
 	}
 	for _, f := range files {
 		fmt.Fprintln(os.Stdout, filepath.Base(f))
@@ -188,10 +196,10 @@ func listEntries(dir string) {
 // grepEntries performs a recursive, case-insensitive search in the log directory using grep.
 func grepEntries(dir string, args []string) {
 	if len(args) == 0 {
-		fatal("nothing to grep.")
+		fatal("Nothing to grep.")
 	}
 	grepArgs := append([]string{"-iR", "--color"}, append(args, dir)...)
-	runCmd(exec.Command("grep", grepArgs...), "grep failed")
+	runCmd(exec.Command("grep", grepArgs...), "Grep failed")
 }
 
 // defaultEditor returns the editor set by the EDITOR environment variable or the first available editor from a list.
@@ -212,7 +220,7 @@ func defaultEditor() string {
 func ensureDir(dir string, perm os.FileMode) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, perm); err != nil {
-			fatal("could not create directory %s: %v", dir, err)
+			fatal("Could not create directory %s: %v", dir, err)
 		}
 	}
 }
