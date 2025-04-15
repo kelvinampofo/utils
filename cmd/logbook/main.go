@@ -175,11 +175,29 @@ func appendToEntry(file string, lines []string) {
 
 // readEntry displays the log file using the user's pager, defaulting to "less" if not specified.
 func readEntry(file string) {
+	// read file content to determine length
+	content, err := os.ReadFile(file)
+	if err != nil {
+		fatal("Failed to read file: %v", err)
+	}
+	lines := strings.Count(string(content), "\n")
+	// check if stdout is a terminal
+	isTTY := func() bool {
+		fileInfo, err := os.Stdout.Stat()
+		if err != nil {
+			return false
+		}
+		return (fileInfo.Mode() & os.ModeCharDevice) != 0
+	}
 	pager := os.Getenv("PAGER")
 	if pager == "" {
 		pager = "less"
 	}
-	runCmd(exec.Command(pager, file), "failed to open pager")
+	if isTTY() || lines > 20 {
+		runCmd(exec.Command(pager, file), "Failed to open pager")
+	} else {
+		runCmd(exec.Command("cat", file), "Failed to print file")
+	}
 }
 
 // listEntries prints the names of all log files in the log directory.
