@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -24,6 +25,8 @@ var config = Config{
 	FilePermission:  0755,
 	EntryPermission: 0644,
 }
+
+var outputJSON bool
 
 // fatal prints an error message to stderr and exits with code 1.
 func fatal(format string, args ...any) {
@@ -55,6 +58,7 @@ func newRootCmd() *cobra.Command {
 		Short: "A CLI for daily Markdown logbooks.",
 		Run:   func(cmd *cobra.Command, args []string) { cmd.Help() },
 	}
+	rootCmd.PersistentFlags().BoolVar(&outputJSON, "json", false, "Output results in JSON format")
 	rootCmd.AddCommand(addCmd, editCmd, readCmd, lsCmd, grepCmd, logfileCmd, logdirCmd)
 	return rootCmd
 }
@@ -161,13 +165,13 @@ func editEntry(file string) {
 // appendToEntry appends the provided text to the specified log file.
 func appendToEntry(file string, lines []string) {
 	ensureDir(filepath.Dir(file), config.FilePermission)
-	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, config.EntryPermission)
+	logFile, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, config.EntryPermission)
 	if err != nil {
 		fatal("Failed to open file: %v", err)
 	}
-	defer f.Close()
+	defer logFile.Close()
 
-	if _, err := f.WriteString(strings.Join(lines, " ") + "\n"); err != nil {
+	if _, err := logFile.WriteString(strings.Join(lines, " ") + "\n"); err != nil {
 		fatal("Failed to write to file: %v", err)
 	}
 	fmt.Fprintf(os.Stdout, "Added entry to \"%s\"\n", filepath.Base(file))
@@ -206,8 +210,20 @@ func listEntries(dir string) {
 	if err != nil {
 		fatal("Error listing files: %v", err)
 	}
-	for _, f := range files {
-		fmt.Fprintln(os.Stdout, filepath.Base(f))
+	if outputJSON {
+		names := []string{}
+		for _, f := range files {
+			names = append(names, filepath.Base(f))
+		}
+		data, err := json.MarshalIndent(names, "", "  ")
+		if err != nil {
+			fatal("Failed to marshal JSON: %v", err)
+		}
+		fmt.Fprintln(os.Stdout, string(data))
+	} else {
+		for _, f := range files {
+			fmt.Fprintln(os.Stdout, filepath.Base(f))
+		}
 	}
 }
 
