@@ -1,34 +1,34 @@
 # utils
 
-Minimal CLI utilities for everyday personal computer tasks.
+Minimal CLI utilities for everyday computer tasks.
 
-[logbook](cmd/logbook/main.go) — manage a project-specific logbook in markdown.
-<br>
-[new-sketch](cmd/newSketch/main.go) — scaffold a new Vite app for rapid UI prototyping.
+- `logbook` — maintain a markdown-based project logbook
 
 **Installation**
 
-The idea is to add these utils to your `PATH`, similar to this:
+Clone the repository and add it to your `PATH`:
 
 ```
 cd ~/Developer
 git clone git@github.com:kelvinampofo/utils.git
 
-# edit your shell configuration (e.g., ~/.zshrc or ~/.bashrc)
-echo 'export PATH=$PATH:$HOME/Developer/utils/bin' >> ~/.zshrc
+# add to PATH (e.g., in ~/.zshrc or ~/.bashrc)
+echo 'export PATH="$HOME/Developer/utils/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-**Go-based utilities**
+**Building Utilities**
 
-The CLI utils are written in Go and must be built before use. If you haven't already, please install [Go](https://go.dev) on your machine. To build them:
+Utilities are written in Go and must be built before use. First, install [Go](https://go.dev) if you haven’t already.
+
+Then build a util like this:
 
 ```
 cd ~/Developer/utils
 go build -o bin/<util-name> ./cmd/<util-name>
 ```
 
-Make sure the resulting `bin/<util-name>` is in your `$PATH` as shown above. You can now run it using:
+Make sure the `bin/` directory is in your `PATH`. Then run any util with:
 
 ```
 <util-name>
