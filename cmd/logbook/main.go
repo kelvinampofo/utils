@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -71,8 +72,9 @@ var editCmd = &cobra.Command{
 	Short:   "Open today's log entry or a specified date file",
 	Example: "  logbook edit\n  logbook edit 2025-04-15",
 	Run: func(cmd *cobra.Command, args []string) {
-		editEntry(resolveLogFile(firstArg(args)))
-		fmt.Fprintln(os.Stdout, "Opened log entry. You can now edit your notes.")
+		file := resolveLogFile(firstArg(args))
+		fmt.Fprintf(os.Stdout, "Opening %s for editing...\n", filepath.Base(file))
+		editEntry(file)
 	},
 }
 
@@ -159,7 +161,7 @@ func resolveLogFile(date string) string {
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
 	}
-	
+
 	return filepath.Join(resolveLogDir(), date+config.FileExtension)
 }
 
@@ -193,7 +195,7 @@ func readEntry(file string) {
 		fatal("failed to read file: %v", err)
 	}
 
-	lines := strings.Count(string(content), "\n")
+	lines := bytes.Count(content, []byte{'\n'})
 
 	isTTY := func() bool {
 		fileInfo, err := os.Stdout.Stat()
@@ -211,7 +213,9 @@ func readEntry(file string) {
 	if isTTY() && lines > 20 {
 		runCmd(exec.Command(pager, file), "failed to open pager")
 	} else {
-		runCmd(exec.Command("cat", file), "failed to print file")
+		if _, err := os.Stdout.Write(content); err != nil {
+			fatal("failed to display file: %v", err)
+		}
 	}
 }
 
