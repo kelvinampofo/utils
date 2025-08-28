@@ -208,7 +208,7 @@ func readEntry(file string) {
 		pager = "less"
 	}
 
-	if isTTY() || lines > 20 {
+	if isTTY() && lines > 20 {
 		runCmd(exec.Command(pager, file), "failed to open pager")
 	} else {
 		runCmd(exec.Command("cat", file), "failed to print file")
