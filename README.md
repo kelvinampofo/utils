@@ -1,43 +1,39 @@
 # utils
 
-Minimal CLI utilities for everyday computer tasks.
+Command-line utils for everyday development and computer workflows.
 
-- `logbook` — maintain a markdown-based project logbook
+- `logbook` — Manage a simple markdown journal per project
 
-**Installation**
+## Installation
 
-Clone the repository and add it to your `PATH`:
+Add this repo's `bin` directory to your `PATH`.
 
-```
+```plain
 cd ~/Developer
 git clone git@github.com:kelvinampofo/utils.git
 
-# add to PATH (e.g., in ~/.zshrc or ~/.bashrc)
-echo 'export PATH="$HOME/Developer/utils/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+# zsh/bash
+export PATH="$PATH:$HOME/Developer/workspaces/utils/bin"
+
+# fish
+set -U fish_user_paths $HOME/Developer/workspaces/utils/bin $fish_user_paths
 ```
 
-**Building Utilities**
+## Build
 
-Utilities are written in Go and must be built before use. First, install [Go](https://go.dev) if you haven’t already.
+Utils are written in Go.
 
-Then build a util like this:
-
-```
-cd ~/Developer/utils
-go build -o bin/<util-name> ./cmd/<util-name>
+```plain
+cd ~/Developer/workspaces/utils
+make build-all
 ```
 
-Make sure the `bin/` directory is in your `PATH`. Then run any util with:
+Build one util:
 
-```
-<util-name>
+```plain
+make build UTIL=logbook
 ```
 
 ## Usage
 
-For a manual on each util, run:
-
-```
-<util-name> --help
-```
+See each utils help with `program --help`.
