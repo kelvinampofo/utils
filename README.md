@@ -1,8 +1,9 @@
 # utils
 
-Command-line utils for everyday development and computer workflows.
+CLI utils for everyday computer things.
 
 - `logbook` — Manage a simple markdown journal per project
+- `ogx` — Check OpenGraph tags for a URL
 
 ## Installation
 
@@ -36,4 +37,4 @@ make build UTIL=logbook
 
 ## Usage
 
-See each utils help with `program --help`.
+See each utils help with `<util-name> --help`.
