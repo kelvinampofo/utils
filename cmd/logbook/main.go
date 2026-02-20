@@ -30,8 +30,8 @@ var (
 	outputJSON bool
 )
 
-// fatal prints an error message to stderr and exits with code 1.
-func fatal(format string, args ...any) {
+// fatalf prints an error message and exits with status 1.
+func fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 	os.Exit(1)
 }
@@ -40,7 +40,7 @@ func fatal(format string, args ...any) {
 func runCmd(cmd *exec.Cmd, msg string) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		fatal("%s: %v", msg, err)
+		fatalf("%s: %v", msg, err)
 	}
 }
 
@@ -49,7 +49,7 @@ func main() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	if err := rootCmd.Execute(); err != nil {
-		fatal("%v", err)
+		fatalf("%v", err)
 	}
 }
 
@@ -140,7 +140,7 @@ func firstArg(args []string) string {
 	}
 
 	if _, err := time.Parse("2006-01-02", args[0]); err != nil {
-		fatal("invalid date format: %s (expected YYYY-MM-DD)", args[0])
+		fatalf("invalid date format: %s (expected YYYY-MM-DD)", args[0])
 	}
 
 	return args[0]
@@ -150,7 +150,7 @@ func firstArg(args []string) string {
 func resolveLogDir() string {
 	dir, err := os.Getwd()
 	if err != nil {
-		fatal("error getting current dir: %v", err)
+		fatalf("error getting current dir: %v", err)
 	}
 
 	return filepath.Join(dir, config.LogDir)
@@ -177,12 +177,12 @@ func appendToEntry(file string, lines []string) {
 
 	logFile, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, config.EntryPermission)
 	if err != nil {
-		fatal("failed to open file: %v", err)
+		fatalf("failed to open file: %v", err)
 	}
 	defer logFile.Close()
 
 	if _, err := logFile.WriteString(strings.Join(lines, " ") + "\n"); err != nil {
-		fatal("failed to write to file: %v", err)
+		fatalf("failed to write to file: %v", err)
 	}
 
 	fmt.Fprintf(os.Stdout, "Added entry to \"%s\"\n", filepath.Base(file))
@@ -192,7 +192,7 @@ func appendToEntry(file string, lines []string) {
 func readEntry(file string) {
 	content, err := os.ReadFile(file)
 	if err != nil {
-		fatal("failed to read file: %v", err)
+		fatalf("failed to read file: %v", err)
 	}
 
 	lines := bytes.Count(content, []byte{'\n'})
@@ -214,7 +214,7 @@ func readEntry(file string) {
 		runCmd(exec.Command(pager, file), "failed to open pager")
 	} else {
 		if _, err := os.Stdout.Write(content); err != nil {
-			fatal("failed to display file: %v", err)
+			fatalf("failed to display file: %v", err)
 		}
 	}
 }
@@ -223,7 +223,7 @@ func readEntry(file string) {
 func listEntries(dir string) {
 	files, err := filepath.Glob(filepath.Join(dir, "*"+config.FileExtension))
 	if err != nil {
-		fatal("error listing files: %v", err)
+		fatalf("error listing files: %v", err)
 	}
 
 	if outputJSON {
@@ -234,7 +234,7 @@ func listEntries(dir string) {
 
 		data, err := json.MarshalIndent(names, "", "  ")
 		if err != nil {
-			fatal("failed to marshal JSON: %v", err)
+			fatalf("failed to marshal JSON: %v", err)
 		}
 		fmt.Fprintln(os.Stdout, string(data))
 	} else {
@@ -247,7 +247,7 @@ func listEntries(dir string) {
 // grepEntries performs a recursive, case-insensitive search in the log directory using grep.
 func grepEntries(dir string, args []string) {
 	if len(args) == 0 {
-		fatal("nothing to grep")
+		fatalf("nothing to grep")
 	}
 
 	grepArgs := append([]string{"-iR", "--color"}, append(args, dir)...)
@@ -266,7 +266,7 @@ func defaultEditor() string {
 		}
 	}
 
-	fatal("no suitable editor found. Set the EDITOR environment variable")
+	fatalf("no suitable editor found. Set the EDITOR environment variable")
 	return ""
 }
 
@@ -274,7 +274,7 @@ func defaultEditor() string {
 func ensureDir(dir string, perm os.FileMode) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, perm); err != nil {
-			fatal("could not create directory %s: %v", dir, err)
+			fatalf("could not create directory %s: %v", dir, err)
 		}
 	}
 }
