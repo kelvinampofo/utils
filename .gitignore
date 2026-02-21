@@ -1,6 +1,5 @@
 /.DS_Store
 /_local
 /.cache
-
-# ignore binaries
+/.gocache
 /bin
