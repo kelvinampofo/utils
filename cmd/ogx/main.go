@@ -19,7 +19,7 @@ import (
 const (
 	defaultTimeout = 10 * time.Second
 
-	// maxBodyBytes caps how much HTML we parse; OG tags are expected in <head>.
+	// maxBodyBytes limits parsed HTML to ~2 MiB; OG tags are usually in <head>.
 	maxBodyBytes = 2 << 20
 
 	// userAgent identifies this CLI to upstream servers/proxies.
@@ -152,6 +152,7 @@ func printJSON(r result) error {
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
 	return enc.Encode(payload)
 }
 
