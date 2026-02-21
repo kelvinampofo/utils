@@ -1,9 +1,9 @@
 # utils
 
-CLI utils for everyday computer things.
+A collection of personal command-line tools.
 
-- `logbook` — Manage a simple markdown journal per project
-- `ogx` — Check OpenGraph tags for a URL
+- `logbook` — manage a simple markdown journal per project
+- `ogx` — inspect OpenGraph tags for a given URL
 
 ## Installation
 
@@ -22,7 +22,7 @@ set -U fish_user_paths $HOME/Developer/workspaces/utils/bin $fish_user_paths
 
 ## Build
 
-Utils are written in Go.
+utils are written in Go.
 
 ```plain
 cd ~/Developer/workspaces/utils
