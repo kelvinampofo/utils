@@ -1,28 +1,28 @@
 # utils
 
-A collection of personal command-line tools.
+A collection of personal command-line interface tools.
 
-- `logbook` — manage a simple markdown journal per project
-- `ogx` — inspect OpenGraph tags for a given URL
+- `logbook` - Manage a simple markdown journal per project
+- `ogx` - Inspect OpenGraph tags for a URL
+- `forkit` - Embedded implementation prototypes
 
 ## Installation
 
-Add this repo's `bin` directory to your `PATH`.
+Put this repo’s `bin` directory on your `PATH`.
 
 ```plain
 cd ~/Developer
 git clone git@github.com:kelvinampofo/utils.git
-
 # zsh/bash
 export PATH="$PATH:$HOME/Developer/workspaces/utils/bin"
 
 # fish
-set -U fish_user_paths $HOME/Developer/workspaces/utils/bin $fish_user_paths
+fish_add_path $HOME/Developer/workspaces/utils/bin
 ```
 
 ## Build
 
-utils are written in Go.
+Everything is written in Go. Use the make command to build all utils:
 
 ```plain
 cd ~/Developer/workspaces/utils
@@ -37,4 +37,4 @@ make build UTIL=logbook
 
 ## Usage
 
-See each utils help with `<util-name> --help`.
+Run any tool with `--help` for its commands and flags.
