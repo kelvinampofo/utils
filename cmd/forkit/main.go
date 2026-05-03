@@ -17,6 +17,7 @@ import (
 const (
 	baseName     = "base"
 	manifestName = "manifest.json"
+	forkMarker   = ".forkit."
 )
 
 var (
@@ -30,8 +31,9 @@ type manifest struct {
 
 type paths struct {
 	Source   string
+	Dir      string
+	Stem     string
 	Ext      string
-	ForkDir  string
 	Manifest string
 }
 
@@ -42,7 +44,6 @@ type variantInfo struct {
 
 type listOutput struct {
 	Source   string        `json:"source"`
-	ForkDir  string        `json:"forkDir"`
 	Base     string        `json:"base"`
 	Manifest string        `json:"manifest"`
 	Variants []variantInfo `json:"variants"`
@@ -68,7 +69,7 @@ func main() {
 func initCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "init <file>",
-		Short:   "Create a sibling fork directory",
+		Short:   "Create sibling prototype files",
 		Example: "  forkit init src/components/Button.tsx",
 		Args:    cobra.ExactArgs(1),
 		Run: func(_ *cobra.Command, args []string) {
@@ -131,7 +132,7 @@ func dropCmd() *cobra.Command {
 func cleanCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "clean <file>",
-		Short:   "Remove the fork directory",
+		Short:   "Remove all forkit files for a source file",
 		Example: "  forkit clean src/components/Button.tsx",
 		Args:    cobra.ExactArgs(1),
 		Run: func(_ *cobra.Command, args []string) {
@@ -155,7 +156,7 @@ func promoteCmd() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().BoolVar(&clean, "clean", false, "Remove the fork directory after promotion")
+	cmd.Flags().BoolVar(&clean, "clean", false, "Remove forkit prototype files after promotion")
 	return cmd
 }
 
@@ -167,10 +168,6 @@ func initFile(raw string) error {
 	if _, err := os.Stat(p.Manifest); err == nil {
 		return fmt.Errorf("%s is already initialized", p.Source)
 	}
-	if err := os.MkdirAll(p.ForkDir, 0o755); err != nil {
-		return fmt.Errorf("create fork dir: %w", err)
-	}
-
 	m := manifest{Variants: []string{}}
 	if err := copyFile(p.Source, basePath(p)); err != nil {
 		return err
@@ -198,7 +195,7 @@ func copyVariant(raw, name, from string) error {
 			return err
 		}
 	}
-	if err := copyFile(src, filepath.Join(p.ForkDir, name+p.Ext)); err != nil {
+	if err := copyFile(src, namedPath(p, name)); err != nil {
 		return err
 	}
 
@@ -224,8 +221,8 @@ func promoteVariant(raw, name string, clean bool) error {
 		return err
 	}
 	if clean {
-		if err := os.RemoveAll(p.ForkDir); err != nil {
-			return fmt.Errorf("remove fork dir: %w", err)
+		if err := cleanFiles(p, m); err != nil {
+			return err
 		}
 	}
 	printAction("promoted", p, name)
@@ -238,12 +235,12 @@ func dropVariant(raw, name string) error {
 		return err
 	}
 	if name == baseName {
-		return fmt.Errorf("cannot drop %q; use clean to remove the whole fork directory", baseName)
+		return fmt.Errorf("cannot drop %q; use clean to remove all forkit files", baseName)
 	}
 	if !slices.Contains(m.Variants, name) {
 		return fmt.Errorf("unknown variant %q", name)
 	}
-	if err := os.Remove(filepath.Join(p.ForkDir, name+p.Ext)); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(namedPath(p, name)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("remove variant: %w", err)
 	}
 	m.Variants = slices.DeleteFunc(m.Variants, func(v string) bool { return v == name })
@@ -255,12 +252,12 @@ func dropVariant(raw, name string) error {
 }
 
 func cleanFile(raw string) error {
-	p, _, err := load(raw)
+	p, m, err := load(raw)
 	if err != nil {
 		return err
 	}
-	if err := os.RemoveAll(p.ForkDir); err != nil {
-		return fmt.Errorf("remove fork dir: %w", err)
+	if err := cleanFiles(p, m); err != nil {
+		return err
 	}
 	printAction("cleaned", p, "")
 	return nil
@@ -298,7 +295,7 @@ func variantPath(p paths, m manifest, name string) (string, error) {
 		return basePath(p), nil
 	}
 	if slices.Contains(m.Variants, name) {
-		return filepath.Join(p.ForkDir, name+p.Ext), nil
+		return namedPath(p, name), nil
 	}
 	return "", fmt.Errorf("unknown variant %q", name)
 }
@@ -356,17 +353,34 @@ func resolve(raw string) paths {
 	base := filepath.Base(source)
 	ext := filepath.Ext(base)
 	stem := strings.TrimSuffix(base, ext)
-	forkDir := filepath.Join(dir, stem+".forkit")
 	return paths{
 		Source:   source,
+		Dir:      dir,
+		Stem:     stem,
 		Ext:      ext,
-		ForkDir:  forkDir,
-		Manifest: filepath.Join(forkDir, manifestName),
+		Manifest: filepath.Join(dir, stem+forkMarker+manifestName),
 	}
 }
 
 func basePath(p paths) string {
-	return filepath.Join(p.ForkDir, baseName+p.Ext)
+	return namedPath(p, baseName)
+}
+
+func namedPath(p paths, name string) string {
+	return filepath.Join(p.Dir, p.Stem+forkMarker+name+p.Ext)
+}
+
+func cleanFiles(p paths, m manifest) error {
+	files := []string{basePath(p), p.Manifest}
+	for _, v := range m.Variants {
+		files = append(files, namedPath(p, v))
+	}
+	for _, file := range files {
+		if err := os.Remove(file); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("remove %s: %w", file, err)
+		}
+	}
+	return nil
 }
 
 func printList(p paths, m manifest) {
@@ -377,7 +391,7 @@ func printList(p paths, m manifest) {
 	fmt.Printf("%s\n", p.Source)
 	fmt.Printf("  base\t%s\n", basePath(p))
 	for _, v := range m.Variants {
-		fmt.Printf("  %s\t%s\n", v, filepath.Join(p.ForkDir, v+p.Ext))
+		fmt.Printf("  %s\t%s\n", v, namedPath(p, v))
 	}
 }
 
@@ -386,12 +400,11 @@ func listPayload(p paths, m manifest) listOutput {
 	for _, v := range m.Variants {
 		variants = append(variants, variantInfo{
 			Name: v,
-			Path: filepath.Join(p.ForkDir, v+p.Ext),
+			Path: namedPath(p, v),
 		})
 	}
 	return listOutput{
 		Source:   p.Source,
-		ForkDir:  p.ForkDir,
 		Base:     basePath(p),
 		Manifest: p.Manifest,
 		Variants: variants,

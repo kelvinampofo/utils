@@ -7,7 +7,7 @@ you want an agent to take one pass while you, or another agent, try a different
 one. Fork the file, edit the drafts, compare them in git or your editor, then
 promote the one you want.
 
-Start a fork folder:
+Start the prototypes:
 
 ```plain
 forkit init src/components/Button.tsx
@@ -23,8 +23,8 @@ forkit copy src/components/Button.tsx option-b
 Edit the copied files:
 
 ```plain
-src/components/Button.forkit/option-a.tsx
-src/components/Button.forkit/option-b.tsx
+src/components/Button.forkit.option-a.tsx
+src/components/Button.forkit.option-b.tsx
 ```
 
 When one wins, copy it back over the real file:
@@ -33,30 +33,30 @@ When one wins, copy it back over the real file:
 forkit promote src/components/Button.tsx option-a --clean
 ```
 
-The fork folder sits beside the source file. It contains `base.tsx`, your
-drafts, and `manifest.json`, which lists the files in the set.
+The prototype files sit beside the source file so relative imports keep working.
+`manifest.json` lists the files in the set.
 
 ```plain
 src/components/Button.tsx
-src/components/Button.forkit/base.tsx
-src/components/Button.forkit/option-a.tsx
-src/components/Button.forkit/option-b.tsx
-src/components/Button.forkit/manifest.json
+src/components/Button.forkit.base.tsx
+src/components/Button.forkit.option-a.tsx
+src/components/Button.forkit.option-b.tsx
+src/components/Button.forkit.manifest.json
 ```
 
-Treat `*.forkit/` as scratch work. I usually ignore it:
+Treat `*.forkit.*` as scratch work. I usually ignore it:
 
 ```plain
-*.forkit/
+*.forkit.*
 ```
 
 Use `git diff --no-index` or your editor to compare drafts. Use `forkit drop`
-to delete one draft and `forkit clean` to delete the whole fork folder.
+to delete one draft and `forkit clean` to delete all forkit files for a source.
 
 ## Agents
 
 For agents, the clean rule is: one agent owns one draft file. Tell the agent to
-edit only `Button.forkit/agent-pass.tsx`, leave `Button.tsx` alone, and report
+edit only `Button.forkit.agent-pass.tsx`, leave `Button.tsx` alone, and report
 the tradeoffs when done. The human picks the winner and runs `forkit promote`.
 
 There is a small agent skill next to the util:
