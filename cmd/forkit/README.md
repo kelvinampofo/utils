@@ -33,6 +33,8 @@ When one wins, copy it back over the real file:
 forkit promote src/components/Button.tsx option-a --clean
 ```
 
+`--clean` is to remove all forkit files for a source file.
+
 The prototype files sit beside the source file so relative imports keep working.
 `manifest.json` lists the files in the set.
 
@@ -47,6 +49,7 @@ src/components/Button.forkit.manifest.json
 Treat `*.forkit.*` as scratch work. I usually ignore it:
 
 ```plain
+# .gitignore
 *.forkit.*
 ```
 
@@ -72,6 +75,5 @@ Then prompt the agent with the workflow and the target file:
 
 ```plain
 # Prompt
-Use the forkit agent workflow to make two drafts for src/components/Button.tsx:
-simple-api and visual-polish. Don't promote; summarize tradeoffs.
+Use the forkit agent workflow on {component_path} to create drafts: compound-components and render-props. Do not promote. Summarize tradeoffs.
 ```
