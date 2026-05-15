@@ -2,279 +2,246 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	LogDir          string
-	FileExtension   string
-	FilePermission  os.FileMode
-	EntryPermission os.FileMode
-}
-
-var (
-	config = Config{
-		LogDir:          ".logbook",
-		FileExtension:   ".md",
-		FilePermission:  0755,
-		EntryPermission: 0644,
-	}
-	outputJSON bool
+const (
+	logDir       = ".logbook"
+	logExtension = ".md"
+	dateFmt      = "2006-01-02"
 )
 
-// fatalf prints an error message and exits with status 1.
-func fatalf(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-	os.Exit(1)
-}
+const help = `logbook keeps project-local notes in ./.logbook/YYYY-MM-DD.md.
 
-// runCmd sets up the command's I/O and executes it. If execution fails, it prints an error message and exits.
-func runCmd(cmd *exec.Cmd, msg string) {
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		fatalf("%s: %v", msg, err)
-	}
-}
+Usage:
+  logbook             open today's log in $EDITOR
+  logbook add <text>  append text to today's log
+  logbook read [date] print a log
+  logbook ls          list logs
+  logbook path [date] print a log path
+  logbook grep <term> search logs
+  logbook help        show this help
+
+Dates use the ISO 8601 calendar format: YYYY-MM-DD.`
 
 func main() {
-	rootCmd := newRootCmd()
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-
-	if err := rootCmd.Execute(); err != nil {
-		fatalf("%v", err)
+	if err := run(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "logbook: %v\n", err)
+		os.Exit(1)
 	}
 }
 
-// newRootCmd initialises the root command and registers all subcommands.
-func newRootCmd() *cobra.Command {
-	rootCmd := &cobra.Command{
-		Use:   "logbook [subcommand]",
-		Short: "A CLI for daily markdown logbooks",
-		Run:   func(cmd *cobra.Command, args []string) { cmd.Help() },
-	}
-
-	rootCmd.PersistentFlags().BoolVar(&outputJSON, "json", false, "Output results in JSON format")
-	rootCmd.AddCommand(addCmd, editCmd, readCmd, lsCmd, grepCmd, logfileCmd, logdirCmd)
-
-	return rootCmd
-}
-
-var editCmd = &cobra.Command{
-	Use:     "edit [date]",
-	Short:   "Open today's log entry or a specified date file",
-	Example: "  logbook edit\n  logbook edit 2025-04-15",
-	Run: func(cmd *cobra.Command, args []string) {
-		file := resolveLogFile(firstArg(args))
-		fmt.Fprintf(os.Stdout, "Opening %s for editing...\n", filepath.Base(file))
-		editEntry(file)
-	},
-}
-
-var addCmd = &cobra.Command{
-	Use:     "add [text]",
-	Short:   "Append a line of text to today's log",
-	Example: "  logbook add 'Today was a good day'",
-	Run: func(cmd *cobra.Command, args []string) {
-		file := resolveLogFile("")
-		if len(args) == 0 {
-			editEntry(file)
-		} else {
-			appendToEntry(file, args)
-		}
-	},
-}
-
-var readCmd = &cobra.Command{
-	Use:     "read [date]",
-	Short:   "Read today's or a specified date log in a pager",
-	Example: "  logbook read\n  logbook read 2025-04-15",
-	Run: func(cmd *cobra.Command, args []string) {
-		readEntry(resolveLogFile(firstArg(args)))
-	},
-}
-
-var lsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List all log files in the .logbook directory",
-	Run: func(cmd *cobra.Command, args []string) {
-		listEntries(resolveLogDir())
-	},
-}
-
-var grepCmd = &cobra.Command{
-	Use:   "grep <keyword>",
-	Short: "Search logs for matching lines",
-	Run: func(cmd *cobra.Command, args []string) {
-		grepEntries(resolveLogDir(), args)
-	},
-}
-
-var logfileCmd = &cobra.Command{
-	Use:   "logfile",
-	Short: "Print path to today's log file",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(resolveLogFile(""))
-	},
-}
-
-var logdirCmd = &cobra.Command{
-	Use:   "logdir",
-	Short: "Print path to the .logbook directory",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(resolveLogDir())
-	},
-}
-
-// firstArg returns the validated date from args or today's date in YYYY-MM-DD format.
-func firstArg(args []string) string {
+func run(args []string) error {
 	if len(args) == 0 {
-		return time.Now().Format("2006-01-02")
+		return edit("")
 	}
 
-	if _, err := time.Parse("2006-01-02", args[0]); err != nil {
-		fatalf("invalid date format: %s (expected YYYY-MM-DD)", args[0])
+	switch args[0] {
+	case "-h", "--help", "help":
+		fmt.Println(help)
+	case "edit":
+		date, err := optionalDate(args[1:])
+		if err != nil {
+			return err
+		}
+		return edit(date)
+	case "add":
+		return add(args[1:])
+	case "read":
+		date, err := optionalDate(args[1:])
+		if err != nil {
+			return err
+		}
+		return read(date)
+	case "ls", "list":
+		return list()
+	case "path":
+		date, err := optionalDate(args[1:])
+		if err != nil {
+			return err
+		}
+		file, err := logFile(date)
+		if err != nil {
+			return err
+		}
+		fmt.Println(file)
+	case "grep":
+		return grep(args[1:])
+	default:
+		return fmt.Errorf("unknown command %q\n\n%s", args[0], help)
 	}
-
-	return args[0]
+	return nil
 }
 
-// resolveLogDir returns the full path to the .logbook directory in the current working directory.
-func resolveLogDir() string {
-	dir, err := os.Getwd()
+func add(words []string) error {
+	if len(words) == 0 {
+		return edit("")
+	}
+	dir, err := logDirPath()
 	if err != nil {
-		fatalf("error getting current dir: %v", err)
+		return err
 	}
-
-	return filepath.Join(dir, config.LogDir)
-}
-
-// resolveLogFile returns the full path to the log file for the given date.
-func resolveLogFile(date string) string {
-	if date == "" {
-		date = time.Now().Format("2006-01-02")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
 	}
-
-	return filepath.Join(resolveLogDir(), date+config.FileExtension)
-}
-
-// editEntry opens the specified log file in the user's default editor.
-func editEntry(file string) {
-	ensureDir(filepath.Dir(file), config.FilePermission)
-	runCmd(exec.Command(defaultEditor(), file), "failed to open editor")
-}
-
-// appendToEntry appends the provided text to the specified log file.
-func appendToEntry(file string, lines []string) {
-	ensureDir(filepath.Dir(file), config.FilePermission)
-
-	logFile, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, config.EntryPermission)
+	file, err := logFile("")
 	if err != nil {
-		fatalf("failed to open file: %v", err)
+		return err
 	}
-	defer logFile.Close()
-
-	if _, err := logFile.WriteString(strings.Join(lines, " ") + "\n"); err != nil {
-		fatalf("failed to write to file: %v", err)
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
 	}
-
-	fmt.Fprintf(os.Stdout, "Added entry to \"%s\"\n", filepath.Base(file))
+	defer f.Close()
+	_, err = fmt.Fprintln(f, strings.Join(words, " "))
+	return err
 }
 
-// readEntry displays the log file using the user's pager, defaulting to "less" if not specified.
-func readEntry(file string) {
+func edit(date string) error {
+	dir, err := logDirPath()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	file, err := logFile(date)
+	if err != nil {
+		return err
+	}
+	if err := touch(file); err != nil {
+		return err
+	}
+	cmd, err := editorCommand(file)
+	if err != nil {
+		return err
+	}
+	return cmd.Run()
+}
+
+func read(date string) error {
+	file, err := logFile(date)
+	if err != nil {
+		return err
+	}
 	content, err := os.ReadFile(file)
 	if err != nil {
-		fatalf("failed to read file: %v", err)
+		return err
 	}
-
-	lines := bytes.Count(content, []byte{'\n'})
-
-	isTTY := func() bool {
-		fileInfo, err := os.Stdout.Stat()
-		if err != nil {
-			return false
-		}
-		return (fileInfo.Mode() & os.ModeCharDevice) != 0
+	if stdoutIsTTY() && bytes.Count(content, []byte{'\n'}) > 20 {
+		return command(defaultPager(), file).Run()
 	}
-
-	pager := os.Getenv("PAGER")
-	if pager == "" {
-		pager = "less"
-	}
-
-	if isTTY() && lines > 20 {
-		runCmd(exec.Command(pager, file), "failed to open pager")
-	} else {
-		if _, err := os.Stdout.Write(content); err != nil {
-			fatalf("failed to display file: %v", err)
-		}
-	}
+	_, err = os.Stdout.Write(content)
+	return err
 }
 
-// listEntries prints the names of all log files in the log directory.
-func listEntries(dir string) {
-	files, err := filepath.Glob(filepath.Join(dir, "*"+config.FileExtension))
+func list() error {
+	dir, err := logDirPath()
 	if err != nil {
-		fatalf("error listing files: %v", err)
+		return err
 	}
-
-	if outputJSON {
-		names := make([]string, 0, len(files))
-		for _, f := range files {
-			names = append(names, filepath.Base(f))
-		}
-
-		data, err := json.MarshalIndent(names, "", "  ")
-		if err != nil {
-			fatalf("failed to marshal JSON: %v", err)
-		}
-		fmt.Fprintln(os.Stdout, string(data))
-	} else {
-		for _, f := range files {
-			fmt.Fprintln(os.Stdout, filepath.Base(f))
-		}
+	files, err := filepath.Glob(filepath.Join(dir, "*"+logExtension))
+	if err != nil {
+		return err
 	}
+	for _, file := range files {
+		fmt.Println(strings.TrimSuffix(filepath.Base(file), logExtension))
+	}
+	return nil
 }
 
-// grepEntries performs a recursive, case-insensitive search in the log directory using grep.
-func grepEntries(dir string, args []string) {
+func grep(args []string) error {
 	if len(args) == 0 {
-		fatalf("nothing to grep")
+		return fmt.Errorf("grep needs a search term")
 	}
-
-	grepArgs := append([]string{"-iR", "--color"}, append(args, dir)...)
-	runCmd(exec.Command("grep", grepArgs...), "grep failed")
+	dir, err := logDirPath()
+	if err != nil {
+		return err
+	}
+	return command("grep", append([]string{"-Rin"}, append(args, dir)...)...).Run()
 }
 
-// defaultEditor returns the editor set by the EDITOR environment variable or the first available editor from a list.
-func defaultEditor() string {
+func optionalDate(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", nil
+	}
+	if len(args) > 1 {
+		return "", fmt.Errorf("too many arguments")
+	}
+	if _, err := time.Parse(dateFmt, args[0]); err != nil {
+		return "", fmt.Errorf("invalid date %q; expected ISO 8601 format YYYY-MM-DD", args[0])
+	}
+	return args[0], nil
+}
+
+func logDirPath() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("get working directory: %w", err)
+	}
+	return filepath.Join(wd, logDir), nil
+}
+
+func logFile(date string) (string, error) {
+	if date == "" {
+		date = time.Now().Format(dateFmt)
+	}
+	dir, err := logDirPath()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, date+logExtension), nil
+}
+
+func touch(file string) error {
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func command(name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd
+}
+
+func editorCommand(file string) (*exec.Cmd, error) {
 	if editor := os.Getenv("EDITOR"); editor != "" {
-		return editor
+		return command(editor, file), nil
 	}
 
-	for _, editor := range []string{"nvim", "vim", "nano", "emacs"} {
+	for _, editor := range []string{"nvim", "vim"} {
 		if _, err := exec.LookPath(editor); err == nil {
-			return editor
+			return command(editor, file), nil
 		}
 	}
 
-	fatalf("no suitable editor found. Set the EDITOR environment variable")
-	return ""
+	if _, err := exec.LookPath("open"); err == nil {
+		textEdit := command("open", "-e", file)
+		return textEdit, nil
+	}
+
+	return nil, fmt.Errorf("set EDITOR or install nvim or vim")
 }
 
-// ensureDir checks if a directory exists and creates it with the specified permissions if not.
-func ensureDir(dir string, perm os.FileMode) {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, perm); err != nil {
-			fatalf("could not create directory %s: %v", dir, err)
-		}
+func defaultPager() string {
+	if pager := os.Getenv("PAGER"); pager != "" {
+		return pager
 	}
+	return "less"
+}
+
+func stdoutIsTTY() bool {
+	info, err := os.Stdout.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
