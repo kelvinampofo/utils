@@ -16,18 +16,18 @@ const (
 	dateFmt      = "2006-01-02"
 )
 
-const help = `logbook keeps project-local notes in ./.logbook/YYYY-MM-DD.md.
+const help = `logbook keeps project-local notes in .logbook/YYYY-MM-DD.md.
 
 Usage:
-  logbook             open today's log in $EDITOR
-  logbook add <text>  append text to today's log
-  logbook read [date] print a log
-  logbook ls          list logs
-  logbook path [date] print a log path
-  logbook grep <term> search logs
-  logbook help        show this help
+  logbook                    open today's log
+  logbook add <text>         append to today's log
+  logbook read [date]        print a log
+  logbook ls                 list logs
+  logbook grep <term>        search logs (alias: search)
+  logbook path [date]        print a log path
+  logbook -h, --help         print this help
 
-Dates use the ISO 8601 calendar format: YYYY-MM-DD.`
+Dates use YYYY-MM-DD.`
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -40,10 +40,12 @@ func run(args []string) error {
 	if len(args) == 0 {
 		return edit("")
 	}
+	if wantsHelp(args) {
+		fmt.Println(help)
+		return nil
+	}
 
 	switch args[0] {
-	case "-h", "--help", "help":
-		fmt.Println(help)
 	case "edit":
 		date, err := optionalDate(args[1:])
 		if err != nil {
@@ -70,12 +72,16 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Println(file)
-	case "grep":
-		return grep(args[1:])
+	case "grep", "search":
+		return grepLogs(args[1:])
 	default:
-		return fmt.Errorf("unknown command %q\n\n%s", args[0], help)
+		return fmt.Errorf("unknown command %q; run 'logbook --help'", args[0])
 	}
 	return nil
+}
+
+func wantsHelp(args []string) bool {
+	return args[0] == "help" || args[0] == "-h" || args[0] == "--help"
 }
 
 func add(words []string) error {
@@ -87,7 +93,7 @@ func add(words []string) error {
 		return err
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return fmt.Errorf("create log directory: %w", err)
 	}
 	file, err := logFile("")
 	if err != nil {
@@ -95,7 +101,7 @@ func add(words []string) error {
 	}
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("open today's log: %w", err)
 	}
 	defer f.Close()
 	_, err = fmt.Fprintln(f, strings.Join(words, " "))
@@ -108,7 +114,7 @@ func edit(date string) error {
 		return err
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return fmt.Errorf("create log directory: %w", err)
 	}
 	file, err := logFile(date)
 	if err != nil {
@@ -131,7 +137,7 @@ func read(date string) error {
 	}
 	content, err := os.ReadFile(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("read log: %w", err)
 	}
 	if stdoutIsTTY() && bytes.Count(content, []byte{'\n'}) > 20 {
 		return command(defaultPager(), file).Run()
@@ -155,7 +161,7 @@ func list() error {
 	return nil
 }
 
-func grep(args []string) error {
+func grepLogs(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("grep needs a search term")
 	}
@@ -174,7 +180,7 @@ func optionalDate(args []string) (string, error) {
 		return "", fmt.Errorf("too many arguments")
 	}
 	if _, err := time.Parse(dateFmt, args[0]); err != nil {
-		return "", fmt.Errorf("invalid date %q; expected ISO 8601 format YYYY-MM-DD", args[0])
+		return "", fmt.Errorf("invalid date %q; expected YYYY-MM-DD", args[0])
 	}
 	return args[0], nil
 }
@@ -201,7 +207,7 @@ func logFile(date string) (string, error) {
 func touch(file string) error {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("create log: %w", err)
 	}
 	return f.Close()
 }
@@ -211,13 +217,14 @@ func command(name string, args ...string) *exec.Cmd {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	return cmd
 }
 
 func editorCommand(file string) (*exec.Cmd, error) {
-	if editor := os.Getenv("EDITOR"); editor != "" {
-		return command(editor, file), nil
+	for _, variable := range []string{"VISUAL", "EDITOR"} {
+		if editor := os.Getenv(variable); editor != "" {
+			return command(editor, file), nil
+		}
 	}
 
 	for _, editor := range []string{"nvim", "vim"} {
@@ -225,13 +232,10 @@ func editorCommand(file string) (*exec.Cmd, error) {
 			return command(editor, file), nil
 		}
 	}
-
 	if _, err := exec.LookPath("open"); err == nil {
-		textEdit := command("open", "-e", file)
-		return textEdit, nil
+		return command("open", "-e", file), nil
 	}
-
-	return nil, fmt.Errorf("set EDITOR or install nvim or vim")
+	return nil, fmt.Errorf("set VISUAL or EDITOR, or install nvim or vim")
 }
 
 func defaultPager() string {
